@@ -7,7 +7,9 @@
 | Họ và tên | `Nguyễn Minh Dương` |
 | MSSV (đúng bằng `LAB_STUDENT_ID` trong `.env`) | `2A202602920` |
 | GitHub | `minhduong814` |
-| Trip dùng cho bài tập sập và chạy lại (xem GUIDE, bước 5) | `<điền: trip-xxxxx>` |
+| Trip dùng cho bài tập sập và chạy lại (xem GUIDE, bước 5) | `trip-09209` |
+
+MSSV có chữ A nên lệnh `int(MSSV)` trong GUIDE không chạy trực tiếp. Bài tập chọn trip dùng phần số `2202602920 % 26 = 24`, tức `trip-09209` trong danh sách đã sắp xếp; MSSV chia split vẫn là `2A202602920`.
 
 ## Kết quả cuối
 
@@ -56,18 +58,24 @@ Khôi phục luật gốc cho `PASS=6 WARN=1 ERROR=0 SKIP=0`: cảnh báo gap c�
 ### Câu 4
 Dựa vào `idempotency.json`: số dòng trước và sau hai lần chạy lại, và khi ghi kiểu `append`. Vì sao Delta `overwrite` theo partition (một trip) an toàn hơn xoá rồi ghi lại, nhất là khi giữa chừng có lỗi?
 
-(trả lời ở đây)
+Thí nghiệm chạy trên `trip-00003` (60 khung): toàn bảng có 1.246 dòng trước và sau hai lần chạy lại; dấu vân tay đều là `6c7480dfde7e`, `unchanged=true` trong `idempotency.json`.
+Bảng thử dùng append hai lần có 120 dòng cho cùng 60 khung, tức nhân đôi. Pipeline dùng overwrite với predicate `trip_id` để thay đúng tập dòng của trip, giữ nguyên các trip khác.
+Delta công bố thay đổi bằng một commit giao dịch: trước khi commit thành công, người đọc vẫn thấy phiên bản cũ, tránh trạng thái bảng bị mất trip nếu xoá trước rồi ghi thất bại.
+Mã hiện tại partition vật lý theo `drive_id`, còn phạm vi ghi đè là predicate `trip_id`; 26 trip là 26 đơn vị xử lý logic. Tính giao dịch của bảng không đồng nghĩa toàn bộ thao tác ghi ảnh S3 cũng là một giao dịch.
 
 ### Câu 5
 Khung hình **đen** và khung hình **tối** khác nhau thế nào, pipeline xử lý khác nhau ra sao, bạn có đồng ý không? Dựa vào `threshold.json`: nếu chọn ngưỡng 0, 2, 6 thì bao nhiêu khung bị coi là trùng ở mỗi drive? Bạn chọn ngưỡng nào, vì sao, và ngưỡng đó phụ thuộc vào tốc độ xe thế nào?
 
 | dHash khác tối đa | số khung trùng, drive A | số khung trùng, drive B |
 |---|---|---|
-| 0 | | |
-| 2 | | |
-| 6 | | |
+| 0 | 61 | 8 |
+| 2 | 149 | 53 |
+| 6 | 363 | 244 |
 
-(trả lời ở đây)
+Đen là độ sáng trung bình <12; tối là từ 12 đến <40. Khung đen bị loại khỏi Gold, khung tối chỉ gắn cờ và vẫn có thể được giữ nếu không vướng cờ loại khác. Tôi chọn cách này vì đường hầm/bóng râm vẫn là tình huống cần học.
+A có 6 khung đen, 4 khung tối, 9 khung mờ; B có 4 khung đen, 61 khung tối và 0 khung mờ. Các cờ có thể chồng lấp nên không cộng trực tiếp để tính số khung bị loại.
+Theo `threshold.json`, tăng ngưỡng từ 0 lên 6 làm số khung trùng tăng từ 61 lên 363 ở A, từ 8 lên 244 ở B. Tôi giữ ngưỡng 2 để bắt đứng hình/gần trùng mà tránh loại quá nhiều cảnh thay đổi thật.
+Khi xe chạy chậm hoặc dừng, nhiều ảnh liên tiếp ít đổi nên dễ bị coi là trùng; khi xe chạy nhanh, ảnh đổi nhiều hơn. dHash còn chịu ảnh hưởng cảnh và chuyển động camera nên cần xem mẫu ảnh khi chỉnh ngưỡng.
 
 ## Bước 4 · Gold
 
