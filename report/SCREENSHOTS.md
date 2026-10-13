@@ -23,7 +23,7 @@ Run lỗi có một mapped task đỏ (`silver_frames`, map index 0) và bảy t
 - [x] `airflow_failed_graph.png`: Graph đỏ trước phục hồi, 7 task upstream_failed.
 - [x] `minio_lake.png`: thấy bronze/silver/gold.
 - [x] `metabase_dashboard.png`: thấy các biểu đồ và split 745/142/132.
-- [ ] `airflow_recovered_graph.png`: cần chụp Graph xanh của **run `lab_step5_failure_recovery`**; DAG đã phục hồi xong.
-- [ ] `metabase_question.png`: cần chụp câu hỏi **“Tỷ lệ khung bị loại theo trip — Nguyễn Minh Dương”** ở cuối dashboard `/dashboard/2`.
+- [x] `airflow_recovered_graph.png`: Graph xanh của **run `lab_step5_failure_recovery`**, toàn bộ task success.
+- [x] `metabase_question.png`: câu hỏi **“Tỷ lệ khung bị loại theo trip — Nguyễn Minh Dương”** trên dashboard, thấy bảng kết quả với `trip-04622` bị loại 34/60 khung (56,67%).
 
-Ảnh cần chụp thêm chỉ yêu cầu mở đúng run/dashboard, không trigger hoặc reset.
+Đã kiểm tra nội dung đủ 7 ảnh trước nộp; không còn ảnh cần bổ sung.
