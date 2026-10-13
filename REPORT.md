@@ -32,12 +32,24 @@ Kết quả thực tế: A 3.021 dòng, B 3.234 dòng, 26 trip và 2 video. Nạ
 ### Câu 2
 Pipeline đưa hai nguồn về một schema như thế nào (đơn vị, kiểu thời gian, **độ lệch đồng hồ**)? Bằng chứng nào trong kết quả bước 2 cho thấy đã đúng? Dán bảng quarantine của bạn (số dòng theo từng lý do, từng drive) và giải thích vì sao dòng lỗi vào `rejects` thay vì bị xoá.
 
-(trả lời ở đây)
+Staging đổi các tên cột của B về schema A, chia tốc độ km/h cho 3,6 và phần trăm bàn đạp cho 100; timestamp A được cast sang UTC, B trừ offset 1.500 ms rồi chuyển epoch ms sang timestamp.
+Hai nguồn được UNION theo tên cột, phát hiện bản sao và phân loại tốc độ thiếu/ngoài khoảng 0–70 m/s. A còn 2.968 dòng sạch, B còn 3.181; cộng rejects vẫn đúng 3.021 và 3.234 dòng đầu vào.
+Bắt đầu telemetry B là `2025-10-08 14:30:00.009+00:00`, chỉ sau video 9 ms, thay vì 1.509 ms nếu chưa hiệu chỉnh.
+
+| Drive | duplicate | speed_missing | speed_out_of_range | Tổng rejects |
+|---|---:|---:|---:|---:|
+| drive_a | 20 | 30 | 3 | 53 |
+| drive_b | 20 | 30 | 3 | 53 |
+
+106 dòng lỗi được giữ trong `silver.silver_telemetry_rejects` kèm lý do để đối chiếu nguồn và xử lý lại, không làm mất dấu lỗi bằng cách xoá. Bước 2 đạt 7/7 kiểm tra.
 
 ### Câu 3
 Vì sao test `max_gap_ms` là `warn` còn `in_range` là `error`? Kết quả thí nghiệm `break-gate` của bạn (`break_gate.json`): test nào bắt được, bao nhiêu dòng, và điều đó cho biết gì về vai trò của "cổng chất lượng"?
 
-(trả lời ở đây)
+`max_gap_ms` có `severity: warn` vì khoảng mất tín hiệu cảm biến cần được báo nhưng vẫn có thể dùng những đoạn còn tốt; bước nối frame sẽ đánh dấu mất đồng bộ. `in_range` mặc định là `error` vì tốc độ vô lý đi vào dữ liệu huấn luyện sẽ làm sai nhãn.
+Trong `break_gate.json`, nới luật làm sạch lên 1.000 m/s khiến test `in_range_silver_telemetry_speed_mps__70__0` bắt 6 dòng và báo `PASS=5 WARN=1 ERROR=1 SKIP=0`.
+Test vẫn giữ giới hạn 70 m/s, nên phát hiện được lỗi dù luật upstream bị nới. Cổng chất lượng kiểm tra đầu ra, không chỉ tin vào bước biến đổi.
+Khôi phục luật gốc cho `PASS=6 WARN=1 ERROR=0 SKIP=0`: cảnh báo gap còn đó, lỗi tốc độ đã hết; DAG có thể đi tiếp khi không còn test error.
 
 ## Bước 3 · Silver frames
 
