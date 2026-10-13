@@ -1,7 +1,7 @@
 {
   "experiment": "break_gate",
-  "student_id": "2A202602920",
-  "ran_at": "2026-10-13T01:37:41.630456+00:00",
+  "student_id": "202602920",
+  "ran_at": "2026-10-13T02:24:54.621054+00:00",
   "relaxed_max_speed_mps": 1000,
   "gate_failed": true,
   "failing_tests": [
