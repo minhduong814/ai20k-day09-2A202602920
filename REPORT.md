@@ -7,14 +7,14 @@
 | Họ và tên | `Nguyễn Minh Dương` |
 | MSSV (đúng bằng `LAB_STUDENT_ID` trong `.env`) | `2A202602920` |
 | GitHub | `minhduong814` |
-| Trip dùng cho bài tập sập và chạy lại (xem GUIDE, bước 5) | `trip-09209` |
+| Trip dùng cho bài tập sập và chạy lại (xem GUIDE, bước 5) | `trip-00003` |
 
-MSSV có chữ A nên lệnh `int(MSSV)` trong GUIDE không chạy trực tiếp. Bài tập chọn trip dùng phần số `2202602920 % 26 = 24`, tức `trip-09209` trong danh sách đã sắp xếp; MSSV chia split vẫn là `2A202602920`.
+MSSV có chữ A nên lệnh `int(MSSV)` trong GUIDE không chạy trực tiếp. Bài tập chọn trip dùng phần số do tôi chọn `202602920 % 26 = 0`, tức `trip-00003` trong danh sách đã sắp xếp; MSSV chia split vẫn là `2A202602920`.
 
 ## Kết quả cuối
 
-- `dataset_version` của bạn: `<điền>`  (phải khớp `report/evidence/run_summary.json`)
-- Số khung hình train / val / test của bạn: `<điền>`
+- `dataset_version` của bạn: `10cf9861186c`  (phải khớp `report/evidence/run_summary.json`)
+- Số khung hình train / val / test của bạn: `700 / 176 / 143` (tổng 1.019)
 - `report/verify.txt`: tạo bằng `python3 scripts/check_submission.py --save-verify` (phải có `27/27 checks passed`).
 - Ảnh chụp trong `report/screenshots/`: `airflow_graph.png`, `minio_lake.png`, `metabase_dashboard.png`, và ảnh bài tập sập/chạy lại (log task đỏ thấy trip của bạn).
 
@@ -82,17 +82,26 @@ Khi xe chạy chậm hoặc dừng, nhiều ảnh liên tiếp ít đổi nên d
 ### Câu 6
 Dựa vào `leakage.json`: chia theo khung hình làm bao nhiêu trip bị chia cắt, so với chia theo trip? Vì sao điều này làm điểm kiểm thử đẹp một cách giả tạo?
 
-(trả lời ở đây)
+`leakage.json` dùng 1.019 khung hợp lệ thuộc 26 trip. Khi chia theo frame bằng hash, cả 26 trip bị chia qua nhiều split và cả 26 đều có ảnh trong train lẫn test.
+Chia theo trip của Gold cho 0 trip bị chia cắt; mỗi drive có 9 trip train, 2 val, 2 test.
+Ảnh liền nhau cùng chuyến có cảnh, góc máy và thời điểm rất giống nhau. Nếu xuất hiện ở cả train/test, mô hình có thể nhận lại cảnh đã học nên điểm test cao mà khả năng tổng quát sang chuyến mới chưa được đo đúng.
+Thí nghiệm đếm rò rỉ, không huấn luyện mô hình, nên chưa định lượng mức tăng điểm kiểm thử.
 
 ### Câu 7
 Vì sao `dataset_version` là **băm nội dung** chứ không phải ngày giờ hay số đếm? Hai lần chạy liên tiếp cho kết quả gì? Vì sao `dataset_version` của bạn **khác** bạn bè dù cùng dữ liệu (liên hệ MSSV)?
 
-(trả lời ở đây)
+Pipeline sắp xếp theo `frame_id`, băm SHA-256 chuỗi `frame_id|split`, rồi lấy 12 ký tự: version phản ánh danh sách ảnh và cách chia split, không đổi chỉ vì chạy lúc khác.
+Bước 4 và lần `export-dataset` kế tiếp đều cho `10cf9861186c`, 700 train / 176 val / 143 test. Băm này không bao gồm toàn bộ byte ảnh hay mọi trường telemetry; không nên coi nó là checksum của mọi nội dung dataset.
+MSSV đầy đủ `2A202602920` được trộn vào thứ tự md5 của trip trong từng drive. Thử bằng biến môi trường tiến trình `LAB_STUDENT_ID=202602920` cho version `d154c90c8d3b`, 745/142/132 khung, vẫn tổng 1.019.
+Khôi phục MSSV đầy đủ đưa version và split về `10cf9861186c`, 700/176/143. Vì MSSV có thể làm đổi trip thuộc từng split nên kết quả của tôi có thể khác bạn dù cùng đầu vào; băm không bảo đảm mọi MSSV đều cho split khác nhau.
 
 ### Câu 8
 Đọc phần `lineage` trong `manifest.json` của dataset bạn. Trả lời "dataset này được tạo từ dữ liệu nào?" bằng chính nội dung đó. Nếu một người hỏi 3 tháng sau, thông tin nào giúp tái tạo lại đúng dataset này?
 
-(trả lời ở đây)
+Manifest được lưu tại `lake/gold/datasets/10cf9861186c/manifest.json`; bản chụp ở `report/evidence/manifest_step4.json` ghi Bronze telemetry A/B và trips_raw version 0, video_files version 1; Silver frames version 27, telemetry/frames_flagged/frame_telemetry version 0.
+Hai video đầu vào có SHA-256 A `636ba1a98dfc5ba665d1c935e1d2064e69f4df360ff9ffbd15795957d5e7e9aa`, B `bfa62703f645ff77a8578ae3fc74a00881140d38a404d43c8e2af265bbee9fdc`.
+Dataset loại ảnh đen, mờ, gần trùng hoặc mất đồng bộ, chia theo trip trong từng drive; manifest có danh sách ảnh Parquet và checksum manifest. Version bảng có thể tăng sau chạy lại, dù `dataset_version` không đổi.
+Để tái tạo sau 3 tháng cần giữ đầu vào đúng checksum, phiên bản Delta cùng log/data còn tồn tại, mã nguồn và cấu hình ngưỡng/split, MSSV đầy đủ và môi trường chạy. Lineage hỗ trợ truy vết nhưng không tự lưu lại mọi phiên bản mã/cấu hình.
 
 ## Bước 5 · Điều phối và phục vụ
 
