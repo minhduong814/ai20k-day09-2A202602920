@@ -4,9 +4,9 @@
 
 | | |
 |---|---|
-| Họ và tên | `<điền>` |
-| MSSV (đúng bằng `LAB_STUDENT_ID` trong `.env`) | `<điền>` |
-| GitHub | `<điền: tên tài khoản>` |
+| Họ và tên | `Nguyễn Minh Dương` |
+| MSSV (đúng bằng `LAB_STUDENT_ID` trong `.env`) | `2A202602920` |
+| GitHub | `minhduong814` |
 | Trip dùng cho bài tập sập và chạy lại (xem GUIDE, bước 5) | `<điền: trip-xxxxx>` |
 
 ## Kết quả cuối
@@ -21,7 +21,11 @@
 ### Câu 1
 Liệt kê **ít nhất 4 khác biệt** giữa telemetry nguồn A và nguồn B mà bạn thấy ở bronze. Vì sao pipeline giữ **mỗi nguồn một bảng bronze** và để mọi cột ở dạng chữ, thay vì gộp và ép kiểu ngay?
 
-(trả lời ở đây)
+Nguồn A dùng `ts_utc` dạng ISO UTC, còn B dùng `timestamp_ms` dạng epoch mili giây; A có tốc độ `speed_mps` (m/s), B có `spd_kmh` (km/h).
+Các cột hướng/GPS/độ cao đổi từ `heading_deg`, `lat`, `lon`, `alt_m` sang `hdg`, `latitude`, `longitude`, `altitude`; gia tốc `acc_x/acc_y` đổi thành `ax/ay`, góc lái `steer` thành `steering`.
+Bàn đạp A (`gas`, `brake`) ở thang 0–1, còn B (`throttle_pct`, `brake_pct`) ở thang phần trăm; đồng hồ A không lệch, B nhanh hơn video 1.500 ms.
+Bronze giữ riêng schema và các giá trị CSV dạng chữ để bảo toàn nguồn, cả ô trống và dữ liệu sai, phục vụ kiểm tra và xử lý lại khi đổi luật. Các cột metadata do pipeline thêm có kiểu riêng.
+Kết quả thực tế: A 3.021 dòng, B 3.234 dòng, 26 trip và 2 video. Nạp lại được nhận diện bằng SHA-256 và không tăng số dòng; `bronze.raw_telemetry_a` chỉ có commit version 0.
 
 ## Bước 2 · Silver telemetry
 
