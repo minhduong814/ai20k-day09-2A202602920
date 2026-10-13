@@ -15,7 +15,7 @@ MSSV chốt để nộp là `202602920`; `202602920 % 26 = 0` nên trip bài t�
 
 - `dataset_version` của bạn: `d154c90c8d3b`  (phải khớp `report/evidence/run_summary.json`)
 - Số khung hình train / val / test của bạn: `745 / 142 / 132` (tổng 1.019)
-- `report/verify.txt`: tạo bằng `python3 scripts/check_submission.py --save-verify` (phải có `27/27 checks passed`).
+- `report/verify.txt`: đã tạo bằng `python3 scripts/check_submission.py --save-verify`, đạt `27/27 checks passed` sau lần chạy cuối từ lake trống.
 - Ảnh chụp trong `report/screenshots/`: `airflow_graph.png`, `minio_lake.png`, `metabase_dashboard.png`, `airflow_failure_log.png`, `airflow_failed_graph.png`, `airflow_recovered_graph.png` và `metabase_question.png`.
 
 ## Bước 1 · Bronze
@@ -91,14 +91,14 @@ Thí nghiệm đếm rò rỉ, không huấn luyện mô hình, nên chưa đị
 Vì sao `dataset_version` là **băm nội dung** chứ không phải ngày giờ hay số đếm? Hai lần chạy liên tiếp cho kết quả gì? Vì sao `dataset_version` của bạn **khác** bạn bè dù cùng dữ liệu (liên hệ MSSV)?
 
 Pipeline sắp xếp theo `frame_id`, băm SHA-256 chuỗi `frame_id|split`, rồi lấy 12 ký tự: version phản ánh danh sách ảnh và cách chia split, không đổi chỉ vì giờ chạy khác.
-Với MSSV chốt `202602920`, lượt DAG chạy thêm và lượt phục hồi đều cho `d154c90c8d3b`, 745 train / 142 val / 132 test. Lần kiểm tra cuối từ lake trống và xuất lại sẽ được đối chiếu với kết quả này.
+Với MSSV chốt `202602920`, lượt DAG chạy thêm và lượt phục hồi đều cho `d154c90c8d3b`, 745 train / 142 val / 132 test. Lần kiểm tra cuối từ lake trống và lần `export-dataset` kế tiếp đều giữ version này, 1.019 khung và cùng checksum manifest `9cb0eda512c3199f89341953d1ca735afb79c94b56e352e1bfe646dab44042f6` (`run_summary.json`, `export_repeat_final.json`).
 MSSV được trộn vào thứ tự md5 của trip trong từng drive. Khi còn dùng chuỗi `2A202602920`, kết quả là `10cf9861186c`, 700/176/143; đổi sang MSSV chốt làm đổi trip thuộc từng split, vẫn giữ tổng 1.019 khung.
 Băm không bao gồm toàn bộ byte ảnh hay mọi trường telemetry, nên không phải checksum của mọi nội dung dataset. MSSV khác có thể cho split khác nhưng không bảo đảm mọi MSSV đều khác kết quả.
 
 ### Câu 8
 Đọc phần `lineage` trong `manifest.json` của dataset bạn. Trả lời "dataset này được tạo từ dữ liệu nào?" bằng chính nội dung đó. Nếu một người hỏi 3 tháng sau, thông tin nào giúp tái tạo lại đúng dataset này?
 
-Manifest được lưu tại `lake/gold/datasets/d154c90c8d3b/manifest.json`; bản chụp sau phục hồi `report/evidence/manifest_recovered.json` ghi Bronze telemetry A/B và trips_raw version 0, video_files version 1; Silver frames version 51, telemetry/frames_flagged/frame_telemetry version 1.
+Manifest được lưu tại `lake/gold/datasets/d154c90c8d3b/manifest.json`; bản chụp cuối `report/evidence/manifest_final.json` ghi Bronze telemetry A/B và trips_raw version 0, video_files version 1; Silver frames version 25, telemetry/frames_flagged/frame_telemetry version 0. Bản sau phục hồi (`manifest_recovered.json`) có version bảng cao hơn do các lần chạy lại, nhưng cùng dataset_version.
 Hai video đầu vào có SHA-256 A `636ba1a98dfc5ba665d1c935e1d2064e69f4df360ff9ffbd15795957d5e7e9aa`, B `bfa62703f645ff77a8578ae3fc74a00881140d38a404d43c8e2af265bbee9fdc`.
 Dataset loại ảnh đen, mờ, gần trùng hoặc mất đồng bộ, chia theo trip trong từng drive; manifest có danh sách ảnh Parquet và checksum manifest. Version bảng có thể tăng sau chạy lại, dù `dataset_version` không đổi.
 Để tái tạo sau 3 tháng cần giữ đầu vào đúng checksum, phiên bản Delta cùng log/data còn tồn tại, mã nguồn và cấu hình ngưỡng/split, MSSV đầy đủ và môi trường chạy. Lineage hỗ trợ truy vết nhưng không tự lưu lại mọi phiên bản mã/cấu hình.

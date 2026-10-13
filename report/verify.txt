@@ -28,7 +28,7 @@ Module 4 · gold dataset
   PASS  no trip is in two splits (no leakage)                                    26 trips
   PASS  every drive appears in train, val and test                               
   PASS  gold contains no black / blurry / near-duplicate / out-of-sync frame     
-  PASS  one dataset_version, manifest.json agrees with the table                 version 10cf9861186c
+  PASS  one dataset_version, manifest.json agrees with the table                 version d154c90c8d3b
   PASS  manifest lists upstream table versions (lineage)                         
   PASS  every manifest image exists under the dataset version folder             
 
